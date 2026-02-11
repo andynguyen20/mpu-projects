@@ -9,7 +9,7 @@ main:
 	mov r0, #5 // <- r0 chooses which RGB channel to use (change value of r0 for different channel)
 	bl pwm_channel_enable
 	mov r0, #5
-	mov r1, #0x5000 // r1 chooses width and duty cycle of pulse width (change value with respect to width and duty cycle)
+	mov r1, #0x5000 // <- r1 chooses width and duty cycle of pulse width (change value with respect to width and duty cycle subroutine calls)
 	bl pwm_window_width
 	mov r0, #5
 	mov r1, #0x6000
