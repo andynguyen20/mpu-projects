@@ -9,14 +9,25 @@
 main:
 	bl sseg_bcd
 	mov r12, #0 //entire timer variable (global)
+	mov r10, #0 //previous reset button
+	mov r11, #0 //current reset button
 	main_loop:
 		push {r4, r5}
 		ldr r4, =BTN_DATA
 		ldr r5, [r4]
-		cmp r5, #1
+		mov r10, r11 // move current from last run into previous (initial is zero)
+		and r11, r5, #1 // mask only reset bit
+		cmp r10, #0 // if previous is 1, no positive edge
+		bne no_reset
+		cmp r11, #0 // if current is 0, not a rising edge
+		beq no_reset
 		pop {r4, r5}
-		bleq reset
-		b sseg_ones
+		bl reset
+		b main_loop
+no_reset:
+	pop {r4, r5}
+	bl sseg_ones
+	b main_loop
 
 reset:
 	push {r4, r5}
