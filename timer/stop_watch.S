@@ -13,10 +13,14 @@ main:
 	mov r11, #0 //current reset button
 	mov r8, #0
 	mov r9, #0
+	mov r7, #0
 	main_loop:
 		push {r4, r5}
 		ldr r4, =BTN_DATA
 		ldr r5, [r4]
+		ldr r7, [r4]
+		cmp r7, #4
+		beq no_reset_pop
 		mov r10, r11 // move current from last run into previous (initial is zero)
 		and r11, r5, #1 // mask only reset bit
 		cmp r10, #0 // if previous is 1, no positive edge
@@ -29,12 +33,17 @@ main:
 			mov r8, r9
 			and r9, r5, #2
 			cmp r8, #0
-			bne no_reset
+			bne main_loop_return
 			cmp r9, #0
-			beq no_reset
+			beq main_loop_return
 			pop {r4, r5}
 			b increment
 		b main_loop
+
+
+main_loop_return:
+	pop {r4, r5}
+	b main_loop
 
 increment:
 	push {r4, r5}
@@ -48,7 +57,7 @@ increment:
 	beq increment_tens
 	cmp r5, #1
 	beq increment_ones
-	b no_reset
+	b main_loop
 
 increment_ones:
 	pop {r4, r5}
@@ -60,7 +69,7 @@ increment_ones:
 	add r5, r5, #1
 	bic r12, r12, #0xF // clear BCD_ones before orring back added amount
 	orr r12, r12, r5 // (Note that 10 is stored back into r12. beq condition will check, sseg_tens needs to increment the tens bit and clear the 10 in ones to 0)
-	str r12, [r4] // display data
+	str r12, [r4]
 	bl software_delay
 	pop {r4, r5}
 	b main_loop
@@ -113,10 +122,19 @@ increment_thousands:
 	pop {r4, r5, r6}
 	b main_loop
 
-no_reset:
+no_reset_pop:
 	pop {r4, r5}
+	b no_reset
+
+no_reset:
+	push {r4, r5}
+	ldr r4, =BTN_DATA
+	ldr r5, [r4]
+	cmp r5, #4
+	pop {r4, r5}
+	beq main_loop
 	bl sseg_ones
-	b main_loop
+	b no_reset
 
 reset:
 	push {r4, r5}
@@ -137,6 +155,7 @@ sseg_ones:
 	add r5, r5, #1
 	bic r12, r12, #0xF // clear BCD_ones before orring back added amount
 	orr r12, r12, r5 // (Note that 10 is stored back into r12. beq condition will check, sseg_tens needs to increment the tens bit and clear the 10 in ones to 0)
+	str r12, [r4]
 	pop {r4, r5}
 	b main_loop
 	sseg_ones_pop:
